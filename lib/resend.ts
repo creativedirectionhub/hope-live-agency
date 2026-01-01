@@ -1,3 +1,5 @@
+import nodemailer from 'nodemailer'
+
 export async function sendEmail({
   to,
   subject,
@@ -7,36 +9,34 @@ export async function sendEmail({
   subject: string
   html: string
 }) {
-  const apiKey = process.env.RESEND_API_KEY
+  const gmailUser = process.env.GMAIL_USER
+  const gmailPassword = process.env.GMAIL_APP_PASSWORD
   
-  if (!apiKey || apiKey === 're_placeholder_key') {
-    console.warn('Resend API key not configured. Email would have been sent to:', to)
+  if (!gmailUser || !gmailPassword) {
+    console.warn('Gmail credentials not configured. Email would have been sent to:', to)
     return { success: false, message: 'Email service not configured' }
   }
 
   try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
+    // Create transporter using Gmail SMTP
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: gmailUser,
+        pass: gmailPassword,
       },
-      body: JSON.stringify({
-        from: 'H.O.P.E Live Agency <noreply@emails.hopeliveagency.com>',
-        to: [to],
-        subject,
-        html,
-      }),
     })
 
-    if (!response?.ok) {
-      const errorData = await response?.json?.().catch(() => ({ error: 'Unknown error' }))
-      console.error('Resend API error:', errorData)
-      return { success: false, message: 'Failed to send email' }
-    }
+    // Send email
+    const info = await transporter.sendMail({
+      from: `"H.O.P.E Live Agency" <${gmailUser}>`,
+      to,
+      subject,
+      html,
+    })
 
-    const data = await response?.json?.()
-    return { success: true, data }
+    console.log('Email sent successfully:', info.messageId)
+    return { success: true, data: info }
   } catch (error) {
     console.error('Email sending error:', error)
     return { success: false, message: 'Failed to send email' }
