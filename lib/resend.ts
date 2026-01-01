@@ -22,7 +22,7 @@ export async function sendEmail({
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'H.O.P.E Live Agency <noreply@hopeliveagency.com>',
+        from: 'H.O.P.E Live Agency <onboarding@resend.dev>',
         to: [to],
         subject,
         html,
